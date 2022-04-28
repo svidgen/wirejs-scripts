@@ -8,11 +8,15 @@ const fs = require('fs');
 
 const exgratia = require('ex-gratia');
 const webpack = require('webpack');
+const { createServer } = require('http-server');
 const webpackConfigure = require('./configs/webpack.config');
 
 const webpackConfig = webpackConfigure(process.env, process.argv);
 
-const [ nodeBinPath, scriptPath, action ] = process.argv;
+const [nodeBinPath, scriptPath, action] = process.argv;
+
+let compiler;
+let server;
 
 const processes = [];
 
@@ -23,7 +27,7 @@ async function exec(cmd) {
 		proc = child_process.exec(cmd, (error, stdout, stderr) => {
 			processes.splice(processes.indexOf(proc), 1);
 			if (error || stderr) {
-				reject({error, stderr});
+				reject({ error, stderr });
 			} else {
 				resolve(stdout);
 			}
@@ -32,49 +36,87 @@ async function exec(cmd) {
 	});
 }
 
-async function compile() {
+async function compile(watch = false) {
 	const stats = await new Promise((resolve, reject) => {
-		const compiler = webpack(webpackConfig);
-		compiler.run((err, res) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(res);
-			}
-		});
+		if (watch) {
+			compiler = webpack({
+				...webpackConfig,
+				mode: 'development'
+			});
+			compiler.watch({
+				ignored: [
+					"**/dist/*",
+					"**/node_modules/*"
+				]
+			}, (err, result) => {
+				// console.log(err || result);
+			});
+			resolve({});
+		} else {
+			compiler = webpack(webpackConfig);
+			compiler.run((err, res) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve(res);
+				}
+			});
+		}
 	});
-	if (stats.compilation.errors.length > 0) {
+
+	if (stats?.compilation?.errors?.length > 0) {
 		console.log(stats.compilation.errors);
 		throw new Error('Build failed.');
 	}
+
 	return stats;
 }
 
 const engine = {
 
-	async build({watch = false} = {}) {
+	/*
+	"serve": "http-server ./dist -o",
+	"start": "concurrently -k -p \"[{name}]\" -n \"Build,Serve\" -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve\""
+	*/
+
+	async build({ watch = false } = {}) {
 		rimraf.sync('dist');
 		fs.mkdirSync('dist');
 		try {
-			// await exec('npm run ex-gratia');
-			// await exec(`npm run webpack -c "${__dirname}/configs/webpack.config.js"`);
-			await compile();
+			await compile(watch);
 		} catch (err) {
 			console.log(err);
 		}
 	},
 
 	async start() {
+		this.build({ watch: true });
+
+		// js interface doesn't cleanly support -o
+		server = createServer({
+			root: "./dist"
+		});
+		server.listen(3000, "localhost", () => {
+			console.log(`Listening at http://localhost:3000/`);
+		});
+
+		await new Promise(resolve => {
+			function exitGracefully() {
+				console.log('Exiting gracefully ...');
+				processes.forEach(p => p.kill());
+				server.close();
+				resolve();
+			}
+			process.on('SIGINT', exitGracefully);
+			process.on('SIGTERM', exitGracefully);
+		});
+
+		// explicit exit seems to ensure webpack (?) process is also killed.
+		// i am otherwise unclear on how to kill it.
+		process.exit();
 	}
 
 };
-
-function exitGracefully() {
-	processes.forEach(p => p.kill());
-}
-
-process.on('SIGINT', exitGracefully);
-process.on('SIGTERM', exitGracefully);
 
 if (typeof engine[action] === 'function') {
 	console.log(`Running ${action} ... `);
