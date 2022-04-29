@@ -5,11 +5,15 @@ const child_process = require('child_process');
 const concurrently = require('concurrently');
 const rimraf = require('rimraf');
 const fs = require('fs');
+const path = require('path');
 
 const exgratia = require('ex-gratia');
 const webpack = require('webpack');
 const { createServer } = require('http-server');
 const webpackConfigure = require('./configs/webpack.config');
+const WebpackDevServer = require('webpack-dev-server');
+
+const CWD = process.cwd();
 
 const webpackConfig = webpackConfigure(process.env, process.argv);
 
@@ -43,6 +47,21 @@ async function compile(watch = false) {
 				...webpackConfig,
 				mode: 'development'
 			});
+
+			const server = new WebpackDevServer({
+				static: {
+					directory: path.join(CWD, 'dist')
+				},
+				open: true,
+				port: 9999,
+			}, compiler);
+
+			console.log('Starting server...');
+			server.start().then(() => {
+				resolve({});
+			});
+
+			/*
 			compiler.watch({
 				ignored: [
 					"**/dist/*",
@@ -51,6 +70,8 @@ async function compile(watch = false) {
 			}, (err, result) => {
 				// console.log(err || result);
 			});
+			*/
+
 			resolve({});
 		} else {
 			compiler = webpack(webpackConfig);
@@ -92,19 +113,21 @@ const engine = {
 	async start() {
 		this.build({ watch: true });
 
-		// js interface doesn't cleanly support -o
+		/*
+			// js interface doesn't cleanly support -o
 		server = createServer({
 			root: "./dist"
 		});
 		server.listen(3000, "localhost", () => {
 			console.log(`Listening at http://localhost:3000/`);
 		});
+		*/
 
 		await new Promise(resolve => {
 			function exitGracefully() {
 				console.log('Exiting gracefully ...');
 				processes.forEach(p => p.kill());
-				server.close();
+				// server.close();
 				resolve();
 			}
 			process.on('SIGINT', exitGracefully);

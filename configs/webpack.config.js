@@ -2,9 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const glob = require('glob');
 const { exec } = require('child_process');
+const process = require('process');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const marked = require('marked');
 const { JSDOM } = require('jsdom');
+
+const CWD = process.cwd();
 
 // https://marked.js.org/using_advanced
 marked.setOptions({
@@ -46,9 +49,9 @@ const layouts = {};
 const CollectLayouts = {
 	transformer: (content, path) => {
 		// add one to dirname prefix to include separating slash
-		const relativePath = path.slice(__dirname.length + 1);
+		const relativePath = path.slice(CWD.length + 1);
 		layouts[relativePath] = content.toString();
-		return content.toString();
+		return layouts[relativePath];
 	}
 };
 
@@ -124,6 +127,7 @@ const SSG = {
 				} else {
 					body = prebody;
 				}
+
 			} else {
 				body = eval('`' + content + '`');
 			}
@@ -134,25 +138,27 @@ const SSG = {
 
 		const metatags = Object.entries(_meta).map(([tag, content]) => {
 			tag = tag.replace(/"/g, '&quot;');
-				content = content.replace(/"/g, '&quot;');
-					return `<meta name="${tag}" content="${content}" />`;
-				}).join('\n');
-				let title = _meta.title;
+			content = content.replace(/"/g, '&quot;');
+			return `<meta name="${tag}" content="${content}" />`;
+		}).join('\n');
 
-				// apply no layout if the document has already provided the
-				// overarching html structure.
-				if (!_meta.layout && body && (
-					String(body).startsWith('<!doctype html>')
-					|| String(body).startsWith('<html'))
-				) {
-					return body;
-				}
+		let title = _meta.title;
 
-				const layoutPath = path.join(
-					'src',
-					'layouts',
-					(_meta.layout || 'default')
-				) + '.html';
+		// apply no layout if the document has already provided the
+		// overarching html structure.
+		if (!_meta.layout && body && (
+			String(body).startsWith('<!doctype html>')
+			|| String(body).startsWith('<html'))
+		) {
+			return body;
+		}
+
+		const layoutPath = path.join(
+			'src',
+			'layouts',
+			(_meta.layout || 'default')
+		) + '.html';
+
 		const layout = layouts[layoutPath];
 
 		try {
@@ -171,8 +177,8 @@ module.exports = (env, argv) => {
 	}
 
 	const sources = ['./src/index.js']
-		.concat(glob.sync('./src/routes/**/*.js'))
 		.concat(glob.sync('./src/layouts/**/*.js'))
+		.concat(glob.sync('./src/routes/**/*.js'))
 	;
 
 	const entry = sources.reduce((files, path) => {
@@ -185,15 +191,23 @@ module.exports = (env, argv) => {
 	}, {});
 
 	return {
-		// devServer: {
-		// 	// contentBase: path.join(__dirname, 'dist'),
-		// 	compress: true,
-		// 	// open: true,
-		// 	port: 9999,
-		// 	watchContentBase: true,
-		// 	liveReload: true,
-		// 	hot: true
-		// },
+		/*
+		devServer: {
+			contentBase: path.join(CWD, 'dist'),
+			compress: true,
+			open: true,
+			port: 9999,
+			watchContentBase: true,
+			// liveReload: true,
+			// hot: true
+		},
+		*/
+		watchOptions: {
+			ignored: [
+				"**/dist/*",
+				"**/node_modules/*"
+			]
+		},
 		node: {
 			__filename: true
 		},
@@ -203,12 +217,13 @@ module.exports = (env, argv) => {
 		},
 		devtool,
 		plugins: [
+
+			// TODO: does it make sense to actually handle static assets
+			// first? then layouts? then everything else?
+
+			// handle layouts first. other things depend on them.
 			new CopyWebpackPlugin({
 				patterns: [
-					{
-						from: 'static',
-						noErrorOnMissing: true
-					},
 					{
 						from: './src/layouts/**/*.html',
 						to: distPath({
@@ -216,50 +231,69 @@ module.exports = (env, argv) => {
 							subpathOut: 'layouts'
 						}),
 						transform: CollectLayouts,
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+					},
+				]
+			}),
+
+			// now pages, etc.
+			new CopyWebpackPlugin({
+				patterns: [
+					{
+						from: 'static',
+						noErrorOnMissing: true,
+						priority: 10,
 					},
 					{
 						from: './src/routes/**/*.md',
 						to: distPath({ subpathIn: 'src/routes' }),
 						transform: SSG,
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.html',
 						to: distPath({ subpathIn: 'src/routes' }),
 						transform: SSG,
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.css',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
 						// trasform: ???
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.png',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.jpg',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.json',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.svg',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 					{
 						from: './src/routes/**/*.mp3',
 						to: distPath({ subpathIn: 'src/routes' }),
-						noErrorOnMissing: true
+						noErrorOnMissing: true,
+						priority: 3,
 					},
 				],
 			})

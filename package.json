@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "ex-gratia": "^1.0.3",
-    "wirejs-dom": "^1.0.4",
-    "highlight.js": "^11.1.0"
+    "highlight.js": "^11.1.0",
+    "webpack-dev-server": "^4.8.1",
+    "wirejs-dom": "^1.0.4"
   }
 }
