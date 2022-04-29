@@ -2,26 +2,18 @@
 
 const process = require('process');
 const child_process = require('child_process');
-const concurrently = require('concurrently');
 const rimraf = require('rimraf');
 const fs = require('fs');
 const path = require('path');
 
 const exgratia = require('ex-gratia');
 const webpack = require('webpack');
-const { createServer } = require('http-server');
 const webpackConfigure = require('./configs/webpack.config');
 const WebpackDevServer = require('webpack-dev-server');
 
 const CWD = process.cwd();
-
 const webpackConfig = webpackConfigure(process.env, process.argv);
-
 const [nodeBinPath, scriptPath, action] = process.argv;
-
-let compiler;
-let server;
-
 const processes = [];
 
 async function exec(cmd) {
@@ -61,17 +53,6 @@ async function compile(watch = false) {
 				resolve({});
 			});
 
-			/*
-			compiler.watch({
-				ignored: [
-					"**/dist/*",
-					"**/node_modules/*"
-				]
-			}, (err, result) => {
-				// console.log(err || result);
-			});
-			*/
-
 			resolve({});
 		} else {
 			compiler = webpack(webpackConfig);
@@ -94,12 +75,6 @@ async function compile(watch = false) {
 }
 
 const engine = {
-
-	/*
-	"serve": "http-server ./dist -o",
-	"start": "concurrently -k -p \"[{name}]\" -n \"Build,Serve\" -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve\""
-	*/
-
 	async build({ watch = false } = {}) {
 		rimraf.sync('dist');
 		fs.mkdirSync('dist');
@@ -113,29 +88,17 @@ const engine = {
 	async start() {
 		this.build({ watch: true });
 
-		/*
-			// js interface doesn't cleanly support -o
-		server = createServer({
-			root: "./dist"
-		});
-		server.listen(3000, "localhost", () => {
-			console.log(`Listening at http://localhost:3000/`);
-		});
-		*/
-
 		await new Promise(resolve => {
 			function exitGracefully() {
 				console.log('Exiting gracefully ...');
 				processes.forEach(p => p.kill());
-				// server.close();
 				resolve();
 			}
 			process.on('SIGINT', exitGracefully);
 			process.on('SIGTERM', exitGracefully);
 		});
 
-		// explicit exit seems to ensure webpack (?) process is also killed.
-		// i am otherwise unclear on how to kill it.
+		// explicit exit forces lingering child processes to die.
 		process.exit();
 	}
 
