@@ -56,22 +56,31 @@ const CollectLayouts = {
 };
 
 async function mermaid(text) {
-	const tempbase = `__mermaid_temp_${new Date().getTime()}`;
+	const tempbase = path.join(
+		__dirname,
+		`__mermaid_temp_${new Date().getTime()}`
+	);
 	const tempInput = `${tempbase}.txt`;
 	const tempOutput = `${tempbase}.svg`;
+	const pConfigPath = path.join(
+		__dirname,
+		'puppeteer-config.json'
+	);
 
 	console.log(`writing ${tempInput} ...`);
 	fs.writeFileSync(tempInput, text);
 
 	await new Promise((resolve, reject) => {
-		const cmd = `yarn mmdc -i ${tempInput} -o ${tempOutput} -b transparent -p puppeteer-config.json`;
+		const cmd = `npm exec mmdc -- -i "${tempInput}" -o "${tempOutput}" -b transparent -p "${pConfigPath}"`;
 		console.log(`executing ${cmd} ...`);
-		exec(cmd, (err, stdout, stderr) => {
+		exec(cmd, {cwd: __dirname}, (err, stdout, stderr) => {
 			if (err || stderr) {
 				console.log('failed', {err, stdout, stderr});
 				reject(err);
+			} else {
+				console.log('succeeded', stdout);
+				resolve();
 			}
-			resolve();
 		});
 	});
 	console.log(`mermaid CLI done generating ${tempOutput}`);
