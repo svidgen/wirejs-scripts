@@ -5,12 +5,6 @@
   "bin": {
     "wirejs-scripts": "./bin.js"
   },
-  "scripts": {
-    "build": "rimraf dist && ex-gratia && webpack",
-    "build:watch": "rimraf dist && webpack --mode development --progress --watch",
-    "serve": "http-server ./dist -o",
-    "start": "concurrently -k -p \"[{name}]\" -n \"Build,Serve\" -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve\""
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/svidgen/wirejs-scripts.git"
