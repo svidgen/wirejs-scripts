@@ -315,8 +315,8 @@ module.exports = (env, argv) => {
 						"style-loader",
 						// path.resolve(__dirname, '../node_modules/style-loader'),
 						{
-							// loader: "css-loader",
-							loader: path.resolve(__dirname, '../node_modules/css-loader'),
+							loader: "css-loader",
+							// loader: path.resolve(__dirname, '../node_modules/css-loader'),
 							options: {
 								// don't try to require() url assets
 								url: false
