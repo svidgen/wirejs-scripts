@@ -312,8 +312,8 @@ module.exports = (env, argv) => {
 				{
 					test: /\.css$/,
 					use: [
-						// "style-loader",
-						path.resolve(__dirname, '../node_modules/style-loader'),
+						"style-loader",
+						// path.resolve(__dirname, '../node_modules/style-loader'),
 						{
 							// loader: "css-loader",
 							loader: path.resolve(__dirname, '../node_modules/css-loader'),
@@ -326,8 +326,8 @@ module.exports = (env, argv) => {
 				},
 				{
 					test: /\.html$/,
-					// loader: "file-loader",
-					loader: path.resolve(__dirname, '../node_modules/file-loader'),
+					loader: "file-loader",
+					// loader: path.resolve(__dirname, '../node_modules/file-loader'),
 					options: {
 						name: "[name].[ext]",
 					}
@@ -340,8 +340,8 @@ module.exports = (env, argv) => {
 				},
 				{
 					test: /\.tpl$/,
-					// use: "raw-loader",
-					use: path.resolve(__dirname, '../node_modules/raw-loader')
+					use: "raw-loader",
+					// use: path.resolve(__dirname, '../node_modules/raw-loader')
 				},
 			]
 		}
