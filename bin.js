@@ -45,7 +45,6 @@ async function compile(watch = false) {
 					directory: path.join(CWD, 'dist')
 				},
 				open: true,
-				port: 9999,
 			}, compiler);
 
 			console.log('Starting server...');
