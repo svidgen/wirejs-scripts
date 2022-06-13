@@ -73,9 +73,9 @@ async function mermaid(text) {
 	await new Promise((resolve, reject) => {
 		const cmd = `npm exec mmdc -- -i "${tempInput}" -o "${tempOutput}" -b transparent -p "${pConfigPath}"`;
 		console.log(`executing ${cmd} ...`);
-		exec(cmd, {cwd: __dirname}, (err, stdout, stderr) => {
+		exec(cmd, { cwd: __dirname }, (err, stdout, stderr) => {
 			if (err || stderr) {
-				console.log('failed', {err, stdout, stderr});
+				console.log('failed', { err, stdout, stderr });
 				reject(err);
 			} else {
 				console.log('succeeded', stdout);
@@ -118,7 +118,7 @@ const SSG = {
 					}, [])
 					.map(l => l.trim()).join('\n')
 					.replace(/(``+)/g, m => Array(m.length).fill('\\`').join(''))
-				;
+					;
 				const bodyMarkdown = eval('`' + escapedMarkdown + '`');
 				const prebody = marked(bodyMarkdown);
 				const { window } = new JSDOM(prebody, { querySelectorAll: true });
@@ -186,31 +186,27 @@ module.exports = (env, argv) => {
 	}
 
 	const sources = ['./src/index.js']
+		.concat(glob.sync('./src/api/**/*.js'))
 		.concat(glob.sync('./src/layouts/**/*.js'))
 		.concat(glob.sync('./src/routes/**/*.js'))
-	;
+		;
 
 	const entry = sources.reduce((files, path) => {
 		if (path.match(/src\/routes/)) {
 			files[path.toString().slice('./src/routes'.length)] = path;
 		} else if (path.match(/src\/layouts/)) {
 			files[path.toString().slice('./src/'.length)] = path;
+		} else if (path.match(/src\/api/)) {
+			// puts api files outside of `dist` to prevent accidental
+			// deployment to routable endpoint.
+			files['../' + path.toString().slice('./src/'.length)] = path;
 		}
 		return files;
 	}, {});
 
+	console.log('JS entrypoints found: ', entry);
+
 	return {
-		/*
-		devServer: {
-			contentBase: path.join(CWD, 'dist'),
-			compress: true,
-			open: true,
-			port: 9999,
-			watchContentBase: true,
-			// liveReload: true,
-			// hot: true
-		},
-		*/
 		watchOptions: {
 			ignored: [
 				"**/dist/*",
@@ -226,10 +222,6 @@ module.exports = (env, argv) => {
 		},
 		devtool,
 		plugins: [
-
-			// TODO: does it make sense to actually handle static assets
-			// first? then layouts? then everything else?
-
 			// handle layouts first. other things depend on them.
 			new CopyWebpackPlugin({
 				patterns: [
@@ -313,10 +305,8 @@ module.exports = (env, argv) => {
 					test: /\.css$/,
 					use: [
 						"style-loader",
-						// path.resolve(__dirname, '../node_modules/style-loader'),
 						{
 							loader: "css-loader",
-							// loader: path.resolve(__dirname, '../node_modules/css-loader'),
 							options: {
 								// don't try to require() url assets
 								url: false
@@ -327,7 +317,6 @@ module.exports = (env, argv) => {
 				{
 					test: /\.html$/,
 					loader: "file-loader",
-					// loader: path.resolve(__dirname, '../node_modules/file-loader'),
 					options: {
 						name: "[name].[ext]",
 					}
@@ -341,9 +330,20 @@ module.exports = (env, argv) => {
 				{
 					test: /\.tpl$/,
 					use: "raw-loader",
-					// use: path.resolve(__dirname, '../node_modules/raw-loader')
 				},
+				{
+					test: /.js$/,
+					use: "api-loader",
+					include: [
+						path.join(CWD, 'src/api')
+					]
+				}
 			]
-		}
+		},
+		resolveLoader: {
+			alias: {
+				'api-loader': path.resolve(__dirname, '../loaders/api-loader.js'),
+			},
+		},
 	};
 };
