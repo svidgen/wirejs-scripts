@@ -333,6 +333,7 @@ module.exports = (env, argv) => {
 				},
 				{
 					test: /.js$/,
+					issuer: /.js$/,
 					use: "api-loader",
 					include: [
 						path.join(CWD, 'src/api')
