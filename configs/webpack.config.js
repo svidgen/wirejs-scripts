@@ -191,15 +191,20 @@ module.exports = (env, argv) => {
 		.concat(glob.sync('./src/routes/**/*.js'))
 		;
 
-	const entry = sources.reduce((files, path) => {
-		if (path.match(/src\/routes/)) {
-			files[path.toString().slice('./src/routes'.length)] = path;
-		} else if (path.match(/src\/layouts/)) {
-			files[path.toString().slice('./src/'.length)] = path;
-		} else if (path.match(/src\/api/)) {
+	const entry = sources.reduce((files, _path) => {
+		if (_path.match(/src\/routes/)) {
+			files[_path.toString().slice('./src/routes'.length)] = _path;
+		} else if (_path.match(/src\/layouts/)) {
+			files[_path.toString().slice('./src/'.length)] = _path;
+		} else if (_path.match(/src\/api/)) {
 			// puts api files outside of `dist` to prevent accidental
 			// deployment to routable endpoint.
-			files['../' + path.toString().slice('./src/'.length)] = path;
+			files[path.join(
+				'..',
+				'api',
+				'routes',
+				_path.toString().slice('./src/api/'.length),
+			)] = _path;
 		}
 		return files;
 	}, {});
