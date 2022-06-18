@@ -44,6 +44,22 @@ async function compile(watch = false) {
 				static: {
 					directory: path.join(CWD, 'dist')
 				},
+				proxy: {
+					"/api": {
+						bypass: (req, res) => {
+							// req. headers, url, method, params, query
+							const {
+								headers, url, method, params, query,
+								baseUrl, originalUrl, route
+							} = req;
+							res.send(JSON.stringify({
+								headers, url, method, params, query,
+								baseUrl, originalUrl, route,
+								keys: Object.keys(req)
+							}, null, 2))
+						}
+					}
+				},
 				open: true,
 			}, compiler);
 
