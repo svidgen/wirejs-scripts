@@ -211,7 +211,7 @@ module.exports = (env, argv) => {
 
 	console.log('JS entrypoints found: ', entry);
 
-	return {
+	const baseConfig = {
 		watchOptions: {
 			ignored: [
 				"**/dist/*",
@@ -224,7 +224,9 @@ module.exports = (env, argv) => {
 		entry,
 		output: {
 			filename: "[name]",
-			library: "main"
+			// library: {
+			// 	type: "commonjs"
+			// }
 		},
 		devtool,
 		plugins: [
@@ -353,4 +355,8 @@ module.exports = (env, argv) => {
 			},
 		},
 	};
+
+	return [
+		{...baseConfig}
+	]
 };

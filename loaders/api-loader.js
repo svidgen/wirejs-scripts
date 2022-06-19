@@ -17,13 +17,16 @@ module.exports = function (source) {
 			// const args = method.toString()
 			// 	.match(/function ?\(([\w\d_,]+)\)/)[1];
 			// return `${method}: async (${args}) =>
-			return `${method}: async (...args) =>
-				fetch("/api/${relativePath}", {
+			return `${method}: async (...args) => {
+				const response = await fetch("/api/${relativePath}", {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify([{method: "${method}", args:[...args]}])
-				}),
-			`;
+				});
+				const body = await response.json();
+				const value = body[0].data;
+				return value;
+			}`;
 		}).join('\n') + '}';
 
 		// return `

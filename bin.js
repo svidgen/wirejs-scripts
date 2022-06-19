@@ -12,7 +12,7 @@ const webpackConfigure = require('./configs/webpack.config');
 const WebpackDevServer = require('webpack-dev-server');
 
 const CWD = process.cwd();
-const webpackConfig = webpackConfigure(process.env, process.argv);
+const webpackConfigs = webpackConfigure(process.env, process.argv);
 const [nodeBinPath, scriptPath, action] = process.argv;
 const processes = [];
 
@@ -50,15 +50,22 @@ async function handleApiResponse(req, res) {
 	if (endpoint) {
 		const body = await postData(req);
 		const calls = JSON.parse(body);
+
+		// This path will actually be written to for deployment to other
+		// hosting providers ... AWS, express, etc.
+		//
+		// const apiPath = path.join(
+		// 	CWD, 'api', 'routes', endpoint
+		// );
+
 		const apiPath = path.join(
-			CWD, 'api', 'routes', endpoint
+			CWD, 'src', 'api', endpoint
 		);
 
-		res.send(JSON.stringify(apiPath));
+		delete require.cache[require.resolve(apiPath)];
 		const api = require(apiPath);
-		return;
-
 		const responses = [];
+
 		for (const call of calls) {
 			try {
 				if (typeof api[call.method] === 'function') {
@@ -110,10 +117,12 @@ async function postData(request) {
 async function compile(watch = false) {
 	const stats = await new Promise((resolve, reject) => {
 		if (watch) {
-			compiler = webpack({
-				...webpackConfig,
-				mode: 'development'
-			});
+			compiler = webpack(
+				webpackConfigs.map(config => ({
+					...config,
+					mode: 'development'
+				}))
+			);
 
 			const server = new WebpackDevServer({
 				static: {
@@ -131,7 +140,7 @@ async function compile(watch = false) {
 				resolve({});
 			});
 		} else {
-			compiler = webpack(webpackConfig);
+			compiler = webpack(webpackConfigs);
 			compiler.run((err, res) => {
 				if (err) {
 					reject(err);
