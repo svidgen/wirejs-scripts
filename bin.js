@@ -163,6 +163,8 @@ const engine = {
 	async build({ watch = false } = {}) {
 		rimraf.sync('dist');
 		fs.mkdirSync('dist');
+		rimraf.sync('api');
+		fs.mkdirSync('api');
 		try {
 			await compile(watch);
 		} catch (err) {

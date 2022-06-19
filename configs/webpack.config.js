@@ -6,6 +6,7 @@ const process = require('process');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const marked = require('marked');
 const { JSDOM } = require('jsdom');
+const WirejsAPIPlugin = require('../plugins/api-plugin');
 
 const CWD = process.cwd();
 
@@ -186,7 +187,7 @@ module.exports = (env, argv) => {
 	}
 
 	const sources = ['./src/index.js']
-		.concat(glob.sync('./src/api/**/*.js'))
+		// .concat(glob.sync('./src/api/**/*.js'))
 		.concat(glob.sync('./src/layouts/**/*.js'))
 		.concat(glob.sync('./src/routes/**/*.js'))
 		;
@@ -215,6 +216,7 @@ module.exports = (env, argv) => {
 		watchOptions: {
 			ignored: [
 				"**/dist/*",
+				"**/api/*",
 				"**/node_modules/*"
 			]
 		},
@@ -223,10 +225,7 @@ module.exports = (env, argv) => {
 		},
 		entry,
 		output: {
-			filename: "[name]",
-			// library: {
-			// 	type: "commonjs"
-			// }
+			filename: "[name]"
 		},
 		devtool,
 		plugins: [
@@ -243,6 +242,12 @@ module.exports = (env, argv) => {
 						noErrorOnMissing: true,
 					},
 				]
+			}),
+
+			// wrap api asset up for the intended execution platform
+			new WirejsAPIPlugin({
+				// RegExp pattern to filter assets for pre-processing.
+				pattern: /src\/api\/.+\.js$/,
 			}),
 
 			// now pages, etc.
