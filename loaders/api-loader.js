@@ -18,10 +18,10 @@ module.exports = function (source) {
 			// 	.match(/function ?\(([\w\d_,]+)\)/)[1];
 			// return `${method}: async (${args}) =>
 			return `${method}: async (...args) =>
-				fetch("${relativePath}", {
+				fetch("/api/${relativePath}", {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({${method}: [...args]})
+					body: JSON.stringify([{method: "${method}", args:[...args]}])
 				}),
 			`;
 		}).join('\n') + '}';

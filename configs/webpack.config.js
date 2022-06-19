@@ -223,7 +223,8 @@ module.exports = (env, argv) => {
 		},
 		entry,
 		output: {
-			filename: "[name]"
+			filename: "[name]",
+			library: "main"
 		},
 		devtool,
 		plugins: [

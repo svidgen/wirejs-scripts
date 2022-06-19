@@ -32,6 +32,81 @@ async function exec(cmd) {
 	});
 }
 
+async function handleApiResponse(req, res) {
+	// req. headers, url, method, params, query
+	const {
+		headers, url, method, params, query,
+		baseUrl, originalUrl, trailers
+	} = req;
+
+	// `query` is an object of querystring params.
+	// `url` is the relative url including query
+	// `headers` is an object like `{[name]: string}`
+	const _path = url.match(/([^?]*)/)[1];
+	const endpoint = _path.match(
+		/\/api\/?(.+\.js)?$/
+	)[1];
+
+	if (endpoint) {
+		const body = await postData(req);
+		const calls = JSON.parse(body);
+		const apiPath = path.join(
+			CWD, 'api', 'routes', endpoint
+		);
+
+		res.send(JSON.stringify(apiPath));
+		const api = require(apiPath);
+		return;
+
+		const responses = [];
+		for (const call of calls) {
+			try {
+				if (typeof api[call.method] === 'function') {
+					responses.push({data:
+						await api[call.method](...call.args)
+					});
+				} else {
+					responses.push({error: "Method not found"});
+				}
+			} catch (error) {
+				responses.push({error});
+			}
+		}
+
+		res.send(JSON.stringify(
+			responses
+		));
+	} else {
+		res.status(404);
+		res.send("404 - Endpoint not found");
+	}
+
+	return;
+
+	res.send(JSON.stringify({
+		keys: Object.keys(req),
+		headers, url, method, params, query,
+		baseUrl, originalUrl, _path, endpoint, body,
+		trailers
+	}, null, 2));
+}
+
+async function postData(request) {
+	return new Promise((resolve, reject) => {
+		const buffer = [];
+		const timeout = setTimeout(() => {
+			reject("Post data not received.");
+		}, 5000);
+		request.on('data', data => buffer.push(data));
+		request.on('end', () => {
+			if (!timeout) return;
+			clearTimeout(timeout);
+			resolve(buffer.join(''));
+		});
+	});
+};
+
+
 async function compile(watch = false) {
 	const stats = await new Promise((resolve, reject) => {
 		if (watch) {
@@ -44,31 +119,17 @@ async function compile(watch = false) {
 				static: {
 					directory: path.join(CWD, 'dist')
 				},
-				proxy: {
-					"/api": {
-						bypass: (req, res) => {
-							// req. headers, url, method, params, query
-							const {
-								headers, url, method, params, query,
-								baseUrl, originalUrl, route
-							} = req;
-							res.send(JSON.stringify({
-								headers, url, method, params, query,
-								baseUrl, originalUrl, route,
-								keys: Object.keys(req)
-							}, null, 2))
-						}
-					}
-				},
 				open: true,
-			}, compiler);
+				proxy: {
+					"/api": { bypass: handleApiResponse }
+				}},
+				compiler
+			);
 
 			console.log('Starting server...');
 			server.start().then(() => {
 				resolve({});
 			});
-
-			resolve({});
 		} else {
 			compiler = webpack(webpackConfig);
 			compiler.run((err, res) => {
