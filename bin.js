@@ -62,7 +62,7 @@ async function handleApiResponse(req, res) {
 			CWD, 'src', 'api', endpoint
 		);
 
-		delete require.cache[require.resolve(apiPath)];
+		Object.keys(require.cache).forEach(function(key) { delete require.cache[key] })
 		const api = require(apiPath);
 		const responses = [];
 
@@ -87,15 +87,6 @@ async function handleApiResponse(req, res) {
 		res.status(404);
 		res.send("404 - Endpoint not found");
 	}
-
-	return;
-
-	res.send(JSON.stringify({
-		keys: Object.keys(req),
-		headers, url, method, params, query,
-		baseUrl, originalUrl, _path, endpoint, body,
-		trailers
-	}, null, 2));
 }
 
 async function postData(request) {

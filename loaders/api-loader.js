@@ -32,10 +32,9 @@ module.exports = function (source) {
 		// return `
 		// 	console.log("${relativePath}", ${Object.keys(api)});
 		// `;
-	} catch {
-		throw new Error(
-			"API modules must be importable/require()-able during build without side effects!"
-		);
+	} catch (error) {
+		console.error(error);
+		throw new Error(error);
 	}
 
 };

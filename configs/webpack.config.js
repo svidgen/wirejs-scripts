@@ -187,7 +187,7 @@ module.exports = (env, argv) => {
 	}
 
 	const sources = ['./src/index.js']
-		// .concat(glob.sync('./src/api/**/*.js'))
+		.concat(glob.sync('./src/api/**/*.js'))
 		.concat(glob.sync('./src/layouts/**/*.js'))
 		.concat(glob.sync('./src/routes/**/*.js'))
 		;
@@ -245,10 +245,10 @@ module.exports = (env, argv) => {
 			}),
 
 			// wrap api asset up for the intended execution platform
-			new WirejsAPIPlugin({
-				// RegExp pattern to filter assets for pre-processing.
-				pattern: /src\/api\/.+\.js$/,
-			}),
+			// new WirejsAPIPlugin({
+			// 	// RegExp pattern to filter assets for pre-processing.
+			// 	pattern: /src\/api\/.+\.js$/,
+			// }),
 
 			// now pages, etc.
 			new CopyWebpackPlugin({
@@ -345,8 +345,8 @@ module.exports = (env, argv) => {
 					use: "raw-loader",
 				},
 				{
-					test: /.js$/,
-					issuer: /.js$/,
+					test: /\.js$/,
+					issuer: /\.js$/,
 					use: "api-loader",
 					include: [
 						path.join(CWD, 'src/api')
