@@ -245,10 +245,10 @@ module.exports = (env, argv) => {
 			}),
 
 			// wrap api asset up for the intended execution platform
-			// new WirejsAPIPlugin({
-			// 	// RegExp pattern to filter assets for pre-processing.
-			// 	pattern: /src\/api\/.+\.js$/,
-			// }),
+			new WirejsAPIPlugin({
+				// RegExp pattern to filter assets for pre-processing.
+				pattern: /src\/api\/.+\.js$/,
+			}),
 
 			// now pages, etc.
 			new CopyWebpackPlugin({

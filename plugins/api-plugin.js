@@ -6,6 +6,21 @@
 //		beforeCompile - 
 // 
 
+const routerSource = `
+`;
+
+function apiIndex(assets) {
+	const routes = Object.keys(assets).filter(r => 
+		(r.startsWith("../api/routes/") || r.startsWith("..\\api\\routes\\"))
+			&& r.endsWith(".js")
+	).map(r => r.substring("../api/routes/".length));
+	return `
+	module.exports = {
+		paths: ${JSON.stringify(routes, null, 2)}
+	}
+	`;
+}
+
 class WirejsAPIPlugin {
 	constructor(options = {}) {
 
@@ -22,7 +37,7 @@ class WirejsAPIPlugin {
 
 		// RawSource is one of the "sources" classes that should be used
 		// to represent asset sources in compilation.
-		const { RawSource, OriginalSource } = webpack.sources;
+		const { OriginalSource } = webpack.sources;
 
 		compiler
 			.hooks
@@ -31,19 +46,16 @@ class WirejsAPIPlugin {
 				compilation.hooks.processAssets.tap(
 					{
 					  name: "WirejsAPIPlugin",
-					  stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
+					  stage: Compilation.PROCESS_ASSETS_STAGE_SUMMARIZE,
 					},
 					assets => {
+						// console.log('assets', JSON.stringify(Object.keys(assets), null, 2));
 						compilation.emitAsset(
-							"../api/routes/someapi.js",
-							new OriginalSource(`
-							
-							const { DomClass } = require('wirejs-dom');
-
-							abc();
-
-							xyz();
-							`, './src/api/someapi.js')
+							"../api/index.js",
+							new OriginalSource(
+								apiIndex(assets),
+								'./src/api/index.js'
+							)
 						);
 					}
 				)
