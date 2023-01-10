@@ -49,7 +49,6 @@ class WirejsAPIPlugin {
 					  stage: Compilation.PROCESS_ASSETS_STAGE_SUMMARIZE,
 					},
 					assets => {
-						// console.log('assets', JSON.stringify(Object.keys(assets), null, 2));
 						compilation.emitAsset(
 							"../api/index.js",
 							new OriginalSource(

@@ -71,26 +71,29 @@ async function mermaid(text) {
 	console.log(`writing ${tempInput} ...`);
 	fs.writeFileSync(tempInput, text);
 
-	await new Promise((resolve, reject) => {
+	const succeeded = await new Promise(resolve => {
 		const cmd = `npm exec mmdc -- -i "${tempInput}" -o "${tempOutput}" -b transparent -p "${pConfigPath}"`;
 		console.log(`executing ${cmd} ...`);
 		exec(cmd, { cwd: __dirname }, (err, stdout, stderr) => {
 			if (err || stderr) {
 				console.log('failed', { err, stdout, stderr });
-				reject(err);
+				resolve(false);
 			} else {
 				console.log('succeeded', stdout);
-				resolve();
+				resolve(true);
 			}
 		});
 	});
-	console.log(`mermaid CLI done generating ${tempOutput}`);
+	fs.unlinkSync(tempInput);
 
-	const svg = fs.readFileSync(tempOutput);
-	fs.unlinkSync(tempInput)
-	fs.unlinkSync(tempOutput);
-
-	return svg;
+	if (succeeded) {
+		console.log(`mermaid CLI done generating ${tempOutput}`);
+		const svg = fs.readFileSync(tempOutput);
+		fs.unlinkSync(tempOutput);
+		return svg;
+	} else {
+		return null;
+	}
 };
 
 const SSG = {
@@ -130,7 +133,9 @@ const SSG = {
 							.querySelectorAll('.language-mermaid')
 						].map(async mdNode => {
 							const svg = await mermaid(mdNode.textContent);
-							mdNode.parentNode.innerHTML = svg;
+							if (svg) {
+								mdNode.parentNode.innerHTML = svg;
+							}
 						})
 					);
 					body = window.document.body.innerHTML;
