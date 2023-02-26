@@ -6,7 +6,6 @@ const rimraf = require('rimraf');
 const fs = require('fs');
 const path = require('path');
 
-const exgratia = require('ex-gratia');
 const webpack = require('webpack');
 const webpackConfigure = require('./configs/webpack.config');
 const WebpackDevServer = require('webpack-dev-server');

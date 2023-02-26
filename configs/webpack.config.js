@@ -5,7 +5,6 @@ const { exec } = require('child_process');
 const process = require('process');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const marked = require('marked');
-const { JSDOM } = require('jsdom');
 
 const CWD = process.cwd();
 
@@ -55,43 +54,6 @@ const CollectLayouts = {
 	}
 };
 
-async function mermaid(text) {
-	const tempbase = path.join(
-		__dirname,
-		`__mermaid_temp_${new Date().getTime()}`
-	);
-	const tempInput = `${tempbase}.txt`;
-	const tempOutput = `${tempbase}.svg`;
-	const pConfigPath = path.join(
-		__dirname,
-		'puppeteer-config.json'
-	);
-
-	console.log(`writing ${tempInput} ...`);
-	fs.writeFileSync(tempInput, text);
-
-	await new Promise((resolve, reject) => {
-		const cmd = `npm exec mmdc -- -i "${tempInput}" -o "${tempOutput}" -b transparent -p "${pConfigPath}"`;
-		console.log(`executing ${cmd} ...`);
-		exec(cmd, {cwd: __dirname}, (err, stdout, stderr) => {
-			if (err || stderr) {
-				console.log('failed', {err, stdout, stderr});
-				reject(err);
-			} else {
-				console.log('succeeded', stdout);
-				resolve();
-			}
-		});
-	});
-	console.log(`mermaid CLI done generating ${tempOutput}`);
-
-	const svg = fs.readFileSync(tempOutput);
-	fs.unlinkSync(tempInput)
-	fs.unlinkSync(tempOutput);
-
-	return svg;
-};
-
 const SSG = {
 	transformer: async (content, _path) => {
 		let _meta = {};
@@ -120,23 +82,7 @@ const SSG = {
 					.replace(/(``+)/g, m => Array(m.length).fill('\\`').join(''))
 				;
 				const bodyMarkdown = eval('`' + escapedMarkdown + '`');
-				const prebody = marked(bodyMarkdown);
-				const { window } = new JSDOM(prebody, { querySelectorAll: true });
-
-				if (window && window.document && window.document.body) {
-					await Promise.all(
-						[...window.document.body
-							.querySelectorAll('.language-mermaid')
-						].map(async mdNode => {
-							const svg = await mermaid(mdNode.textContent);
-							mdNode.parentNode.innerHTML = svg;
-						})
-					);
-					body = window.document.body.innerHTML;
-				} else {
-					body = prebody;
-				}
-
+				body = marked(bodyMarkdown);
 			} else {
 				body = eval('`' + content + '`');
 			}
