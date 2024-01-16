@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const process = require('process');
-const child_process = require('child_process');
 const rimraf = require('rimraf');
 const fs = require('fs');
 const path = require('path');
@@ -12,24 +11,8 @@ const WebpackDevServer = require('webpack-dev-server');
 
 const CWD = process.cwd();
 const webpackConfig = webpackConfigure(process.env, process.argv);
-const [nodeBinPath, scriptPath, action] = process.argv;
+const [_nodeBinPath, _scriptPath, action] = process.argv;
 const processes = [];
-
-async function exec(cmd) {
-	console.log('exec', cmd);
-	return new Promise((resolve, reject) => {
-		let proc;
-		proc = child_process.exec(cmd, (error, stdout, stderr) => {
-			processes.splice(processes.indexOf(proc), 1);
-			if (error || stderr) {
-				reject({ error, stderr });
-			} else {
-				resolve(stdout);
-			}
-		});
-		processes.push(proc);
-	});
-}
 
 async function compile(watch = false) {
 	const stats = await new Promise((resolve, reject) => {
@@ -53,11 +36,16 @@ async function compile(watch = false) {
 
 			resolve({});
 		} else {
+			console.log('wirejs instantiating webpack compiler');
 			compiler = webpack(webpackConfig);
 			compiler.run((err, res) => {
+				console.log('wirejs invoking webpack compiler');
 				if (err) {
+					console.error('wirejs webpack compiler failed');
+					console.error(err);
 					reject(err);
 				} else {
+					console.error('wirejs webpack compiler succeeded');
 					resolve(res);
 				}
 			});
@@ -65,7 +53,7 @@ async function compile(watch = false) {
 	});
 
 	if (stats?.compilation?.errors?.length > 0) {
-		console.log(stats.compilation.errors);
+		console.log('wirejs compilation errors', stats.compilation.errors);
 		throw new Error('Build failed.');
 	}
 
@@ -74,16 +62,26 @@ async function compile(watch = false) {
 
 const engine = {
 	async build({ watch = false } = {}) {
+		console.log('wirejs build starting');
+
 		rimraf.sync('dist');
+		console.log('wirejs cleared old dist folder');
+
 		fs.mkdirSync('dist');
+		console.log('wirejs recreated dist folder');
+
 		try {
+
 			await compile(watch);
+			console.log('wirejs finished compile');
 		} catch (err) {
 			console.log(err);
 		}
+		console.log('wirejs build finished')
 	},
 
 	async start() {
+		console.log('wirejs starting')
 		this.build({ watch: true });
 
 		await new Promise(resolve => {
@@ -97,6 +95,7 @@ const engine = {
 		});
 
 		// explicit exit forces lingering child processes to die.
+		console.log('wirejs stopping')
 		process.exit();
 	}
 

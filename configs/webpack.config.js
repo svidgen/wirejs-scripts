@@ -285,12 +285,7 @@ module.exports = (env, argv) => {
 					}
 				},
 				{
-					test: /\.md$/,
-					use: "raw-loader",
-					// use: path.resolve(__dirname, '../node_modules/raw-loader')
-				},
-				{
-					test: /\.tpl$/,
+					test: /\.(md|tpl)$/,
 					use: "raw-loader",
 					// use: path.resolve(__dirname, '../node_modules/raw-loader')
 				},
