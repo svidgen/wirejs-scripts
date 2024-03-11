@@ -62,8 +62,16 @@ const SSG = {
 			return '';
 		}
 
+		const _require = require;
+		const WD = path.dirname(_path);
+
 		let body;
 		try {
+			require = (requirePath) => {
+				const absolutePath = _require.resolve(requirePath, {paths: [WD]});
+				return _require(absolutePath);
+			}
+
 			if (_path.endsWith('.md')) {
 				let isInCodeBlock = false;
 				const escapedMarkdown = content.toString().split(/\n/)
@@ -89,6 +97,8 @@ const SSG = {
 		} catch (err) {
 			console.error(`Could not parse page ${_path}`, err);
 			throw err;
+		} finally {
+			require = _require;
 		}
 
 		const metatags = Object.entries(_meta).map(([tag, content]) => {
