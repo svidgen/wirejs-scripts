@@ -224,6 +224,20 @@ module.exports = (env, argv) => {
 						priority: 3,
 					},
 					{
+						from: './src/routes/**/*.xml',
+						to: distPath({ subpathIn: 'src/routes' }),
+						transform: SSG,
+						noErrorOnMissing: true,
+						priority: 3,
+					},
+					{
+						from: './src/routes/**/*.rss',
+						to: distPath({ subpathIn: 'src/routes' }),
+						transform: SSG,
+						noErrorOnMissing: true,
+						priority: 3,
+					},
+					{
 						from: './src/routes/**/*.css',
 						to: distPath({ subpathIn: 'src/routes' }),
 						noErrorOnMissing: true,
